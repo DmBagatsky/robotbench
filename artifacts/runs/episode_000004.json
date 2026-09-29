@@ -1,0 +1,76 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "upna-pickup_blue_block_into_the_yellow_tray-episode-000004",
+  "source": {
+    "type": "lerobot",
+    "repo_id": "upna/pickup_blue_block_into_the_yellow_tray",
+    "revision": "main",
+    "episode_index": 4,
+    "dataset_subdir": "blue_block_yellow_tray"
+  },
+  "robot": {
+    "type": "so101_follower",
+    "name": null
+  },
+  "task": {
+    "name": "pick up the blue block and put it into the yellow tray",
+    "task_index": 0
+  },
+  "timing": {
+    "fps": 30.0,
+    "num_frames": 303,
+    "duration_seconds": 10.1
+  },
+  "signals": {
+    "actions": {
+      "source_key": "action",
+      "dtype": "float32",
+      "shape": [
+        6
+      ],
+      "labels": [
+        "shoulder_pan.pos",
+        "shoulder_lift.pos",
+        "elbow_flex.pos",
+        "wrist_flex.pos",
+        "wrist_roll.pos",
+        "gripper.pos"
+      ],
+      "units": null
+    },
+    "states": {
+      "source_key": "observation.state",
+      "dtype": "float32",
+      "shape": [
+        6
+      ],
+      "labels": [
+        "shoulder_pan.pos",
+        "shoulder_lift.pos",
+        "elbow_flex.pos",
+        "wrist_flex.pos",
+        "wrist_roll.pos",
+        "gripper.pos"
+      ],
+      "units": null
+    }
+  },
+  "video_streams": [
+    {
+      "source_key": "observation.images.front",
+      "camera": "front",
+      "width": 640,
+      "height": 480,
+      "fps": 30.0,
+      "codec": "h264"
+    },
+    {
+      "source_key": "observation.images.wrist",
+      "camera": "wrist",
+      "width": 640,
+      "height": 480,
+      "fps": 30.0,
+      "codec": "h264"
+    }
+  ]
+}
