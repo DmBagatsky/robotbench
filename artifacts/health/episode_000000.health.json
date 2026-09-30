@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "upna-pickup_blue_block_into_the_yellow_tray-episode-000000",
+  "episode_index": 0,
+  "checks": [
+    {
+      "code": "frame_count",
+      "status": "pass",
+      "message": "Frame count matches episode metadata",
+      "metrics": {
+        "actual": 330,
+        "expected": 330
+      }
+    },
+    {
+      "code": "signal_shapes",
+      "status": "pass",
+      "message": "Actions and states match the declared schema",
+      "metrics": {
+        "action_shape": "(6,)",
+        "expected_action_shape": "(6,)",
+        "state_shape": "(6,)",
+        "expected_state_shape": "(6,)"
+      }
+    },
+    {
+      "code": "finite_values",
+      "status": "pass",
+      "message": "No NaN or infinite values detected",
+      "metrics": {
+        "action_non_finite": 0,
+        "state_non_finite": 0,
+        "timestamp_non_finite": 0
+      }
+    },
+    {
+      "code": "frame_sequence",
+      "status": "pass",
+      "message": "Frame indices are continuous and unique",
+      "metrics": {
+        "mismatch_count": 0,
+        "duplicate_count": 0
+      }
+    },
+    {
+      "code": "timing",
+      "status": "pass",
+      "message": "Timestamps and control rate look consistent",
+      "metrics": {
+        "expected_fps": 30.0,
+        "measured_fps": 30.0,
+        "relative_fps_error": 1e-6,
+        "large_gap_count": 0,
+        "non_increasing_count": 0,
+        "p95_jitter_ms": 0.0005
+      }
+    },
+    {
+      "code": "joint_variation",
+      "status": "pass",
+      "message": "All joints show measurable variation",
+      "metrics": {
+        "inactive_joint_count": 0,
+        "inactive_joints": ""
+      }
+    },
+    {
+      "code": "action_jumps",
+      "status": "pass",
+      "message": "No extreme single-frame action discontinuities detected",
+      "metrics": {
+        "threshold_fraction_of_episode_range": 0.5,
+        "discontinuity_count": 0,
+        "discontinuity_ratio": 0.0,
+        "p99_relative_jump": 0.084082,
+        "max_relative_jump": 0.15894
+      }
+    }
+  ],
+  "overall_status": "healthy",
+  "passed_checks": 7,
+  "warning_checks": 0,
+  "failed_checks": 0
+}

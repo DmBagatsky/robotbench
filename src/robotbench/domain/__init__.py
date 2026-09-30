@@ -9,6 +9,11 @@ from robotbench.domain.robot_run import (
     VideoStreamSpec,
 )
 
+from robotbench.domain.episode_health import (
+    EpisodeHealthReport,
+    HealthCheck,
+)
+
 __all__ = [
     "RobotInfo",
     "RobotRun",
@@ -18,4 +23,6 @@ __all__ = [
     "SignalSpec",
     "TaskInfo",
     "VideoStreamSpec",
+    "EpisodeHealthReport",
+    "HealthCheck",
 ]
