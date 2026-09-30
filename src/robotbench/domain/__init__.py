@@ -14,6 +14,8 @@ from robotbench.domain.episode_health import (
     HealthCheck,
 )
 
+from .run_health_summary import RunHealthSummary
+
 __all__ = [
     "RobotInfo",
     "RobotRun",
@@ -25,4 +27,5 @@ __all__ = [
     "VideoStreamSpec",
     "EpisodeHealthReport",
     "HealthCheck",
+    "RunHealthSummary",
 ]
