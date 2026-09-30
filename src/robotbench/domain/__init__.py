@@ -15,6 +15,7 @@ from robotbench.domain.episode_health import (
 )
 
 from .run_health_summary import RunHealthSummary
+from .run_comparison import MetricComparison, RunComparison
 
 __all__ = [
     "RobotInfo",
@@ -28,4 +29,6 @@ __all__ = [
     "EpisodeHealthReport",
     "HealthCheck",
     "RunHealthSummary",
+    "MetricComparison",
+    "RunComparison",
 ]
