@@ -27,6 +27,7 @@ from .episode_annotation import (
 
 from .run_health_summary import RunHealthSummary
 from .run_comparison import MetricComparison, RunComparison
+from .outcome_summary import OutcomeSummary
 
 __all__ = [
     "RobotInfo",
@@ -46,4 +47,5 @@ __all__ = [
     "EpisodeOutcome",
     "FailureMode",
     "TaskPhase",
+    "OutcomeSummary",
 ]
