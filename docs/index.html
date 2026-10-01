@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="RobotBench — reliability and diagnostics for real-world robot learning."
+    />
+    <title>RobotBench — Robot Learning Diagnostics</title>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --background: #070a0f;
+        --surface: #0d121b;
+        --surface-light: #121925;
+        --border: #202b3b;
+        --text: #f4f7fb;
+        --muted: #98a5b8;
+        --primary: #57d9a3;
+        --primary-dark: #153d31;
+        --secondary: #79a8ff;
+        --warning: #f6c85f;
+        --max-width: 1180px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 80% 0%, #14243b 0, transparent 34rem),
+          radial-gradient(circle at 5% 25%, #0f2a24 0, transparent 30rem),
+          var(--background);
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      .container {
+        width: min(calc(100% - 40px), var(--max-width));
+        margin-inline: auto;
+      }
+
+      .navigation {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(7, 10, 15, 0.82);
+        backdrop-filter: blur(18px);
+      }
+
+      .navigation-inner {
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-size: 19px;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(87, 217, 163, 0.35);
+        border-radius: 10px;
+        background: var(--primary-dark);
+        color: var(--primary);
+        font-family: monospace;
+        font-size: 17px;
+        box-shadow: 0 0 30px rgba(87, 217, 163, 0.12);
+      }
+
+      .navigation-links {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .navigation-links a:hover {
+        color: var(--text);
+      }
+
+      .hero {
+        padding: 104px 0 76px;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+        align-items: center;
+        gap: 68px;
+      }
+
+      .eyebrow {
+        width: fit-content;
+        margin-bottom: 22px;
+        padding: 7px 11px;
+        border: 1px solid rgba(87, 217, 163, 0.28);
+        border-radius: 999px;
+        background: rgba(87, 217, 163, 0.08);
+        color: var(--primary);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(48px, 7vw, 78px);
+        line-height: 0.98;
+        letter-spacing: -0.055em;
+      }
+
+      .gradient-text {
+        color: var(--primary);
+      }
+
+      .hero-description {
+        max-width: 650px;
+        margin: 28px 0 0;
+        color: var(--muted);
+        font-size: 20px;
+        line-height: 1.55;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 36px;
+      }
+
+      .button {
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 0 19px;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        background: var(--surface-light);
+        font-size: 14px;
+        font-weight: 700;
+        transition:
+          transform 150ms ease,
+          border-color 150ms ease,
+          background 150ms ease;
+      }
+
+      .button:hover {
+        transform: translateY(-2px);
+        border-color: #3d4d63;
+      }
+
+      .button-primary {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #04120d;
+      }
+
+      .button-primary:hover {
+        background: #72e6b7;
+      }
+
+      .hero-note {
+        margin-top: 18px;
+        color: #748197;
+        font-size: 13px;
+      }
+
+      .terminal {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 17px;
+        background: rgba(13, 18, 27, 0.9);
+        box-shadow:
+          0 30px 80px rgba(0, 0, 0, 0.38),
+          0 0 80px rgba(87, 217, 163, 0.04);
+      }
+
+      .terminal-header {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 15px 17px;
+        border-bottom: 1px solid var(--border);
+        background: #111722;
+      }
+
+      .terminal-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3d4757;
+      }
+
+      .terminal-dot:first-child {
+        background: #ff6b6b;
+      }
+
+      .terminal-dot:nth-child(2) {
+        background: #f6c85f;
+      }
+
+      .terminal-dot:nth-child(3) {
+        background: var(--primary);
+      }
+
+      .terminal-body {
+        padding: 25px;
+        color: #b8c4d7;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1.9;
+      }
+
+      .terminal-command {
+        color: var(--text);
+      }
+
+      .terminal-success {
+        color: var(--primary);
+      }
+
+      .terminal-muted {
+        color: #637086;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .metric {
+        padding: 15px;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        background: #0a0e15;
+      }
+
+      .metric-value {
+        color: var(--primary);
+        font-size: 24px;
+        font-weight: 750;
+      }
+
+      .metric-label {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      section {
+        padding: 92px 0;
+      }
+
+      .section-header {
+        max-width: 720px;
+        margin-bottom: 42px;
+      }
+
+      .section-label {
+        margin-bottom: 11px;
+        color: var(--primary);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(34px, 5vw, 52px);
+        line-height: 1.08;
+        letter-spacing: -0.04em;
+      }
+
+      .section-description {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .card {
+        padding: 27px;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        background: rgba(13, 18, 27, 0.8);
+      }
+
+      .card-icon {
+        width: 39px;
+        height: 39px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        background: var(--primary-dark);
+        color: var(--primary);
+        font-family: monospace;
+        font-weight: 700;
+      }
+
+      .card h3 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: -0.02em;
+      }
+
+      .card p {
+        margin: 11px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .screenshot-frame {
+        overflow: hidden;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: #111722;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+      }
+
+      .screenshot-frame img {
+        width: 100%;
+        border-radius: 11px;
+      }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+      }
+
+      .workflow-step {
+        position: relative;
+        padding: 21px 18px;
+        border: 1px solid var(--border);
+        border-radius: 13px;
+        background: var(--surface);
+      }
+
+      .workflow-number {
+        color: var(--primary);
+        font-family: monospace;
+        font-size: 12px;
+      }
+
+      .workflow-step strong {
+        display: block;
+        margin-top: 13px;
+        font-size: 15px;
+      }
+
+      .workflow-step span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .quickstart {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        align-items: center;
+        gap: 60px;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 0;
+        padding: 24px;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        background: #080c12;
+        color: #c8d3e3;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .prompt {
+        color: var(--primary);
+      }
+
+      .roadmap-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 25px;
+      }
+
+      .roadmap-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+      }
+
+      .roadmap-marker {
+        width: 8px;
+        height: 8px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: var(--secondary);
+        box-shadow: 0 0 16px rgba(121, 168, 255, 0.5);
+      }
+
+      .cta {
+        padding: 75px 30px;
+        border: 1px solid rgba(87, 217, 163, 0.24);
+        border-radius: 22px;
+        background:
+          radial-gradient(
+            circle at 50% 0%,
+            rgba(87, 217, 163, 0.12),
+            transparent 65%
+          ),
+          var(--surface);
+        text-align: center;
+      }
+
+      .cta h2 {
+        max-width: 760px;
+        margin-inline: auto;
+      }
+
+      .cta p {
+        max-width: 630px;
+        margin: 19px auto 28px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      footer {
+        padding: 35px 0 50px;
+        color: #6f7b8e;
+        font-size: 13px;
+      }
+
+      .footer-inner {
+        display: flex;
+        justify-content: space-between;
+        gap: 25px;
+        padding-top: 25px;
+        border-top: 1px solid var(--border);
+      }
+
+      @media (max-width: 900px) {
+        .hero-grid,
+        .quickstart {
+          grid-template-columns: 1fr;
+        }
+
+        .workflow {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .navigation-links a:not(.button) {
+          display: none;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .container {
+          width: min(calc(100% - 28px), var(--max-width));
+        }
+
+        .hero {
+          padding-top: 72px;
+        }
+
+        h1 {
+          font-size: 47px;
+        }
+
+        .feature-grid,
+        .metrics,
+        .workflow {
+          grid-template-columns: 1fr;
+        }
+
+        .button {
+          width: 100%;
+        }
+
+        .footer-inner {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navigation">
+      <div class="container navigation-inner">
+        <a class="brand" href="#">
+          <span class="brand-mark">RB</span>
+          RobotBench
+        </a>
+
+        <div class="navigation-links">
+          <a href="#features">Features</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#roadmap">Roadmap</a>
+          <a class="button" data-repo-link href="#quickstart">
+            View on GitHub
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <header class="hero">
+        <div class="container hero-grid">
+          <div>
+            <div class="eyebrow">SO-101 + LeRobot</div>
+
+            <h1>
+              Debug real robots,
+              <span class="gradient-text">not guesswork.</span>
+            </h1>
+
+            <p class="hero-description">
+              RobotBench helps inspect robot-learning datasets and rollouts,
+              detect data problems, review synchronized signals, annotate
+              failures and compare experiments.
+            </p>
+
+            <div class="hero-actions">
+              <a class="button button-primary" href="#quickstart">
+                Run locally
+              </a>
+              <a class="button" data-repo-link href="#features">
+                Explore the repository
+              </a>
+            </div>
+
+            <div class="hero-note">
+              Local-first · Open source · Early prototype
+            </div>
+          </div>
+
+          <div class="terminal" aria-label="RobotBench command output">
+            <div class="terminal-header">
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+            </div>
+
+            <div class="terminal-body">
+              <div class="terminal-command">
+                $ robotbench analyze --episodes 0,1,2,3,4
+              </div>
+              <div class="terminal-success">✓ frame_count</div>
+              <div class="terminal-success">✓ signal_shapes</div>
+              <div class="terminal-success">✓ finite_values</div>
+              <div class="terminal-success">✓ frame_sequence</div>
+              <div class="terminal-success">✓ timing</div>
+              <div class="terminal-success">✓ joint_variation</div>
+              <div class="terminal-success">✓ action_jumps</div>
+              <div class="terminal-muted">5 episodes analyzed · 0 failures</div>
+
+              <div class="metrics">
+                <div class="metric">
+                  <div class="metric-value">5/5</div>
+                  <div class="metric-label">healthy episodes</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-value">100%</div>
+                  <div class="metric-label">annotation coverage</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-value">35</div>
+                  <div class="metric-label">checks passed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="features">
+        <div class="container">
+          <div class="section-header">
+            <div class="section-label">What works today</div>
+            <h2>A practical review loop for robot experiments.</h2>
+            <p class="section-description">
+              Start with LeRobot episode data, validate its integrity, inspect
+              the rollout and save reproducible results.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="card">
+              <div class="card-icon">01</div>
+              <h3>Episode health diagnostics</h3>
+              <p>
+                Detect invalid shapes, non-finite values, timestamp problems,
+                missing frames, frozen joints and extreme action jumps.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="card-icon">02</div>
+              <h3>Video and signal review</h3>
+              <p>
+                Inspect front and wrist video together with actions, states and
+                per-joint tracking error.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="card-icon">03</div>
+              <h3>Outcome annotations</h3>
+              <p>
+                Mark success, failure, partial completion, failure mode, task
+                phase, timestamp and annotation confidence.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="card-icon">04</div>
+              <h3>Baseline comparison</h3>
+              <p>
+                Compare experiment summaries and identify new, resolved,
+                improved or regressed health issues.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="container">
+          <div class="section-header">
+            <div class="section-label">Episode Review</div>
+            <h2>See what happened, not just a success rate.</h2>
+          </div>
+
+          <div class="screenshot-frame">
+            <img
+              src="images/episode-review.png"
+              alt="RobotBench Episode Review interface"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section id="workflow">
+        <div class="container">
+          <div class="section-header">
+            <div class="section-label">Workflow</div>
+            <h2>From raw episode to reproducible comparison.</h2>
+          </div>
+
+          <div class="workflow">
+            <div class="workflow-step">
+              <span class="workflow-number">01</span>
+              <strong>Import</strong>
+              <span>LeRobot episode metadata</span>
+            </div>
+
+            <div class="workflow-step">
+              <span class="workflow-number">02</span>
+              <strong>Analyze</strong>
+              <span>Data integrity checks</span>
+            </div>
+
+            <div class="workflow-step">
+              <span class="workflow-number">03</span>
+              <strong>Review</strong>
+              <span>Video, actions and states</span>
+            </div>
+
+            <div class="workflow-step">
+              <span class="workflow-number">04</span>
+              <strong>Annotate</strong>
+              <span>Outcome and failure mode</span>
+            </div>
+
+            <div class="workflow-step">
+              <span class="workflow-number">05</span>
+              <strong>Compare</strong>
+              <span>Baseline against candidate</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="quickstart">
+        <div class="container quickstart">
+          <div>
+            <div class="section-label">Quick start</div>
+            <h2>Run locally in minutes.</h2>
+            <p class="section-description">
+              RobotBench currently runs as a Python application with a local
+              Streamlit review interface.
+            </p>
+          </div>
+
+          <pre><code><span class="prompt">$</span> uv sync
+
+<span class="prompt">$</span> PYTHONPATH=src uv run pytest -q
+
+<span class="prompt">$</span> PYTHONPATH=src uv run streamlit run \
+    src/robotbench/ui/app.py</code></pre>
+        </div>
+      </section>
+
+      <section id="roadmap">
+        <div class="container quickstart">
+          <div>
+            <div class="section-label">Direction</div>
+            <h2>From dataset checks to real-robot observability.</h2>
+            <p class="section-description">
+              The current prototype validates data and supports manual review.
+              The next stages connect experiment configuration, calibration,
+              sensors and hardware telemetry.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3>Planned</h3>
+
+            <div class="roadmap-list">
+              <div class="roadmap-item">
+                <span class="roadmap-marker"></span>
+                Exact LeRobot video metadata and multi-chunk support
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-marker"></span>
+                Calibration snapshots and drift detection
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-marker"></span>
+                Camera timing and synchronization diagnostics
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-marker"></span>
+                SO-101 load, current, voltage and temperature
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-marker"></span>
+                Preflight checks and failure attribution
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="container">
+          <div class="cta">
+            <h2>Why did the rollout fail?</h2>
+            <p>
+              RobotBench is being built to distinguish failures caused by data,
+              policy, calibration, sensors and robot hardware.
+            </p>
+
+            <div class="hero-actions" style="justify-content: center">
+              <a
+                class="button button-primary"
+                data-repo-link
+                href="#quickstart"
+              >
+                View RobotBench on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container footer-inner">
+        <span>RobotBench · Real-world robot learning diagnostics</span>
+        <span>Early research prototype</span>
+      </div>
+    </footer>
+
+    <script>
+      const isGitHubPages = window.location.hostname.endsWith(".github.io");
+
+      if (isGitHubPages) {
+        const username = window.location.hostname.split(".")[0];
+        const repository = window.location.pathname
+          .split("/")
+          .filter(Boolean)[0];
+        const repositoryUrl = `https://github.com/${username}/${repository}`;
+
+        document.querySelectorAll("[data-repo-link]").forEach((link) => {
+          link.href = repositoryUrl;
+        });
+      }
+    </script>
+  </body>
+</html>
