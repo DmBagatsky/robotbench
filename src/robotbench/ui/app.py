@@ -268,97 +268,98 @@ def show_health(
     )
 
 
-def show_annotation_form(
+def _next_episode(
+    current_episode: int,
+    episode_indices: tuple[int, ...],
+) -> int | None:
+    current_position = episode_indices.index(current_episode)
+
+    if current_position + 1 >= len(episode_indices):
+        return None
+
+    return episode_indices[current_position + 1]
+
+
+def _advance_after_save(
+    current_episode: int,
+    episode_indices: tuple[int, ...],
+) -> None:
+    if not st.session_state.get(
+        "auto_advance",
+        True,
+    ):
+        return
+
+    next_episode = _next_episode(
+        current_episode,
+        episode_indices,
+    )
+
+    if next_episode is not None:
+        st.session_state["selected_episode"] = next_episode
+
+
+def _save_success_callback(
     manifest: dict[str, Any],
     episode_index: int,
+    episode_indices: tuple[int, ...],
 ) -> None:
-    st.subheader("Outcome annotation")
-
-    current = load_annotation(episode_index) or {}
-
-    outcome_values = [value.value for value in EpisodeOutcome]
-    failure_values = [
-        "",
-        *(value.value for value in FailureMode),
-    ]
-    phase_values = [
-        "",
-        *(value.value for value in TaskPhase),
-    ]
-
-    current_outcome = current.get(
-        "outcome",
-        EpisodeOutcome.SUCCESS.value,
-    )
-    current_failure = current.get("failure_mode") or ""
-    current_phase = current.get("phase") or ""
-
-    with st.form(f"annotation-form-{episode_index}"):
-        outcome = st.selectbox(
-            "Outcome",
-            options=outcome_values,
-            index=outcome_values.index(current_outcome),
+    try:
+        annotation = create_annotation(
+            manifest,
+            outcome=EpisodeOutcome.SUCCESS.value,
+            confidence=1.0,
         )
 
-        failure_mode = st.selectbox(
-            "Failure mode",
-            options=failure_values,
-            index=failure_values.index(current_failure),
-            help=("Leave empty for successful episodes"),
+        output_path = ANNOTATIONS_DIR / (
+            f"episode_" f"{episode_index:06d}" f".annotation.json"
         )
 
-        phase = st.selectbox(
-            "Task phase",
-            options=phase_values,
-            index=phase_values.index(current_phase),
+        save_annotation(
+            annotation,
+            output_path,
         )
 
-        duration = float(manifest["timing"]["duration_seconds"])
-
-        timestamp_seconds = st.number_input(
-            "Failure timestamp, seconds",
-            min_value=0.0,
-            max_value=duration,
-            value=float(current.get("timestamp_seconds") or 0.0),
-            step=0.1,
-            help=("Relative to the beginning " "of this episode"),
+        st.session_state["review_message"] = (
+            f"Episode {episode_index} marked " f"as SUCCESS"
         )
 
-        confidence = st.slider(
-            "Confidence",
-            min_value=0.0,
-            max_value=1.0,
-            value=float(
-                current.get(
-                    "confidence",
-                    1.0,
-                )
-            ),
-            step=0.05,
+        _advance_after_save(
+            episode_index,
+            episode_indices,
         )
 
-        notes = st.text_area(
-            "Notes",
-            value=current.get("notes") or "",
-        )
+    except ValueError as error:
+        st.session_state["review_error"] = str(error)
 
-        submitted = st.form_submit_button(
-            "Save annotation",
-            type="primary",
-        )
 
-    if not submitted:
-        return
+def _save_non_success_callback(
+    manifest: dict[str, Any],
+    episode_index: int,
+    episode_indices: tuple[int, ...],
+) -> None:
+    key_suffix = str(episode_index)
+
+    outcome = st.session_state[f"failure_outcome_{key_suffix}"]
+    failure_mode = st.session_state[f"failure_mode_{key_suffix}"]
+    phase = st.session_state[f"failure_phase_{key_suffix}"]
+    confidence = st.session_state[f"failure_confidence_{key_suffix}"]
+    notes = st.session_state[f"failure_notes_{key_suffix}"]
+
+    include_timestamp = st.session_state[f"include_failure_timestamp_{key_suffix}"]
+
+    timestamp_seconds = None
+
+    if include_timestamp:
+        timestamp_seconds = st.session_state[f"failure_timestamp_{key_suffix}"]
 
     try:
         annotation = create_annotation(
             manifest,
             outcome=outcome,
-            failure_mode=(failure_mode or None),
-            phase=phase or None,
-            timestamp_seconds=(
-                None if outcome == EpisodeOutcome.SUCCESS.value else timestamp_seconds
-            ),
+            failure_mode=failure_mode,
+            phase=phase,
+            timestamp_seconds=timestamp_seconds,
             confidence=confidence,
             notes=notes or None,
         )
@@ -372,10 +373,191 @@ def show_annotation_form(
             output_path,
         )
 
-        st.success(f"Annotation saved to {output_path}")
+        st.session_state["review_message"] = (
+            f"Episode {episode_index} marked " f"as {outcome.upper()}"
+        )
+
+        _advance_after_save(
+            episode_index,
+            episode_indices,
+        )
 
     except ValueError as error:
-        st.error(str(error))
+        st.session_state["review_error"] = str(error)
+
+
+def _skip_episode_callback(
+    episode_index: int,
+    episode_indices: tuple[int, ...],
+) -> None:
+    next_episode = _next_episode(
+        episode_index,
+        episode_indices,
+    )
+
+    if next_episode is None:
+        st.session_state["review_message"] = "This is the last episode"
+        return
+
+    st.session_state["selected_episode"] = next_episode
+
+
+def show_quick_review(
+    manifest: dict[str, Any],
+    episode_index: int,
+    episode_indices: tuple[int, ...],
+) -> None:
+    st.subheader("Quick review")
+
+    current = load_annotation(episode_index)
+
+    if current is None:
+        st.info("This episode is not annotated")
+    else:
+        outcome = current["outcome"].upper()
+
+        if current["outcome"] == "success":
+            st.success(f"Current annotation: {outcome}")
+        else:
+            failure_mode = current.get("failure_mode")
+            st.warning(
+                f"Current annotation: {outcome}"
+                + (f" · {failure_mode}" if failure_mode else "")
+            )
+
+    success_column, skip_column = st.columns([2, 1])
+
+    with success_column:
+        st.button(
+            "✓ Mark success",
+            type="primary",
+            use_container_width=True,
+            on_click=_save_success_callback,
+            args=(
+                manifest,
+                episode_index,
+                episode_indices,
+            ),
+        )
+
+    with skip_column:
+        st.button(
+            "Skip →",
+            use_container_width=True,
+            on_click=_skip_episode_callback,
+            args=(
+                episode_index,
+                episode_indices,
+            ),
+        )
+
+    with st.expander("Mark failure, partial or aborted"):
+        key_suffix = str(episode_index)
+
+        non_success_outcomes = [
+            EpisodeOutcome.FAILURE.value,
+            EpisodeOutcome.PARTIAL.value,
+            EpisodeOutcome.ABORTED.value,
+        ]
+
+        current_outcome = current.get("outcome") if current else None
+
+        default_outcome = (
+            current_outcome
+            if current_outcome in non_success_outcomes
+            else EpisodeOutcome.FAILURE.value
+        )
+
+        st.selectbox(
+            "Outcome",
+            options=non_success_outcomes,
+            index=non_success_outcomes.index(default_outcome),
+            key=(f"failure_outcome_{key_suffix}"),
+        )
+
+        failure_modes = [value.value for value in FailureMode]
+
+        current_failure_mode = current.get("failure_mode") if current else None
+
+        default_failure_mode = (
+            current_failure_mode
+            if current_failure_mode in failure_modes
+            else FailureMode.UNKNOWN.value
+        )
+
+        st.selectbox(
+            "Failure mode",
+            options=failure_modes,
+            index=failure_modes.index(default_failure_mode),
+            key=(f"failure_mode_{key_suffix}"),
+        )
+
+        phases = [value.value for value in TaskPhase]
+
+        current_phase = current.get("phase") if current else None
+
+        default_phase = (
+            current_phase if current_phase in phases else TaskPhase.UNKNOWN.value
+        )
+
+        st.selectbox(
+            "Task phase",
+            options=phases,
+            index=phases.index(default_phase),
+            key=(f"failure_phase_{key_suffix}"),
+        )
+
+        current_timestamp = current.get("timestamp_seconds") if current else None
+
+        include_timestamp = st.checkbox(
+            "Specify failure timestamp",
+            value=current_timestamp is not None,
+            key=("include_failure_timestamp_" f"{key_suffix}"),
+            help=("Leave disabled if the exact " "failure moment is unknown"),
+        )
+
+        duration = float(manifest["timing"]["duration_seconds"])
+
+        st.number_input(
+            "Failure timestamp, seconds",
+            min_value=0.0,
+            max_value=duration,
+            value=float(current_timestamp or 0.0),
+            step=0.1,
+            disabled=not include_timestamp,
+            key=(f"failure_timestamp_{key_suffix}"),
+        )
+
+        current_confidence = current.get("confidence", 1.0) if current else 1.0
+
+        st.slider(
+            "Confidence",
+            min_value=0.0,
+            max_value=1.0,
+            value=float(current_confidence),
+            step=0.05,
+            key=(f"failure_confidence_{key_suffix}"),
+        )
+
+        current_notes = current.get("notes") or "" if current else ""
+
+        st.text_area(
+            "Notes",
+            value=current_notes,
+            key=(f"failure_notes_{key_suffix}"),
+        )
+
+        st.button(
+            "Save outcome",
+            type="primary",
+            use_container_width=True,
+            on_click=_save_non_success_callback,
+            args=(
+                manifest,
+                episode_index,
+                episode_indices,
+            ),
+        )
 
 
 def main() -> None:
@@ -388,6 +570,25 @@ def main() -> None:
     st.title("RobotBench")
     st.caption("Reliability and diagnostics " "for real-world robot learning")
 
+    review_message = st.session_state.pop(
+        "review_message",
+        None,
+    )
+
+    if review_message:
+        st.toast(
+            review_message,
+            icon="✅",
+        )
+
+    review_error = st.session_state.pop(
+        "review_error",
+        None,
+    )
+
+    if review_error:
+        st.error(review_error)
+
     manifests = discover_manifests()
 
     if not manifests:
@@ -397,10 +598,23 @@ def main() -> None:
     episode_indices = tuple(sorted(manifests))
     windows = calculate_episode_windows(manifests)
 
+    if (
+        "selected_episode" not in st.session_state
+        or st.session_state["selected_episode"] not in episode_indices
+    ):
+        st.session_state["selected_episode"] = episode_indices[0]
+
     selected_episode = st.sidebar.selectbox(
         "Episode",
         options=episode_indices,
         format_func=lambda value: (f"Episode {value}"),
+        key="selected_episode",
+    )
+
+    st.sidebar.checkbox(
+        "Auto-advance after save",
+        value=True,
+        key="auto_advance",
     )
 
     manifest = load_json(manifests[selected_episode])
@@ -457,9 +671,10 @@ def main() -> None:
 
     show_health(selected_episode)
 
-    show_annotation_form(
+    show_quick_review(
         manifest,
         selected_episode,
+        episode_indices,
     )
 
 
