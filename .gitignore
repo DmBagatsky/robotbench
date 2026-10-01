@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environment
+.venv/
+
+# macOS
+.DS_Store
+
+# Generated RobotBench artifacts
+artifacts/*
+
+# Human-created annotations are versioned
+!artifacts/annotations/
+!artifacts/annotations/**
+
+# Streamlit
+.streamlit/
