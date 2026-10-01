@@ -97,6 +97,18 @@ The local Streamlit interface provides:
 - health-check results;
 - outcome annotation editing.
 
+The review workflow supports:
+
+- one-click success annotation;
+- compact failure annotation;
+- optional failure timestamp;
+- automatic saving;
+- automatic navigation to the next episode;
+- editing existing annotations.
+
+The current version streamlines human review but does not yet
+automatically infer task success from video.
+
 ## Quick start
 
 ### Requirements
