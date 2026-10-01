@@ -1,0 +1,11 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "upna-pickup_blue_block_into_the_yellow_tray-episode-000000",
+  "episode_index": 0,
+  "outcome": "success",
+  "failure_mode": null,
+  "phase": null,
+  "timestamp_seconds": null,
+  "confidence": 1.0,
+  "notes": "Blue block placed into the yellow tray"
+}
