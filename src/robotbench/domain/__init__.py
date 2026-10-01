@@ -8,10 +8,21 @@ from robotbench.domain.robot_run import (
     TaskInfo,
     VideoStreamSpec,
 )
-
+from .episode_annotation import (
+    EpisodeAnnotation,
+    EpisodeOutcome,
+    FailureMode,
+    TaskPhase,
+)
 from robotbench.domain.episode_health import (
     EpisodeHealthReport,
     HealthCheck,
+)
+from .episode_annotation import (
+    EpisodeAnnotation,
+    EpisodeOutcome,
+    FailureMode,
+    TaskPhase,
 )
 
 from .run_health_summary import RunHealthSummary
@@ -31,4 +42,8 @@ __all__ = [
     "RunHealthSummary",
     "MetricComparison",
     "RunComparison",
+    "EpisodeAnnotation",
+    "EpisodeOutcome",
+    "FailureMode",
+    "TaskPhase",
 ]
